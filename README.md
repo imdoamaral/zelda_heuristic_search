@@ -1,7 +1,3 @@
-# Busca Heurística Zelda
-
-Este projeto implementa um algoritmo de busca heurística (A*) para encontrar o caminho mais curto em um ambiente semelhante ao de Zelda.
-
 ## Representação Visual
 
 ![Jornada Zelda](zelda_journey.png)
