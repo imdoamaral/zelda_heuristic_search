@@ -1,4 +1,6 @@
 import itertools
+import time
+import os
 from PIL import Image, ImageDraw, ImageFont
 from map_data import (
     HYRULE_MAP, DUNGEON_MAPS, TERRAIN_COSTS,
@@ -144,6 +146,64 @@ def generate_journey_image(all_paths, optimal_tour, total_cost):
     combined_img.save("/home/israel/zelda_heuristic_search/zelda_journey.png")
     print("\nImagem da jornada salva como 'zelda_journey.png'")
 
+def visualize_console_journey(full_path, total_cost):
+    # Códigos de Cores ANSI para o Terminal
+    class Colors:
+        GREEN = '\033[92m'
+        YELLOW = '\033[93m'
+        BLUE = '\033[94m'
+        RED = '\033[91m'
+        GREY = '\033[90m'
+        WHITE = '\033[97m'
+        RESET = '\033[0m'
+
+    TERRAIN_CHARS = {
+        0: ' ',  # Grama
+        1: '.',  # Areia
+        2: 'F',  # Floresta
+        3: 'M',  # Montanha
+        4: '~',  # Água
+        5: ' ',  # Chão da Masmorra (não usado em Hyrule)
+        6: '#',  # Parede (não usado em Hyrule)
+    }
+
+    path_set = set()
+    current_path_cost = 0
+
+    for i, pos in enumerate(full_path):
+        os.system('cls' if os.name == 'nt' else 'clear') # Limpa o console
+
+        path_set.add(pos)
+
+        # Calcula o custo acumulado
+        if i > 0:
+            prev_pos = full_path[i-1]
+            terrain_type = HYRULE_MAP[prev_pos[0]][prev_pos[1]]
+            current_path_cost += TERRAIN_COSTS.get(terrain_type, 0)
+
+        print("Jornada de Link em Hyrule (Console)")
+        print("-" * 60)
+
+        for r_idx, row in enumerate(HYRULE_MAP):
+            row_str = ""
+            for c_idx, terrain in enumerate(row):
+                char = TERRAIN_CHARS.get(terrain, ' ')
+                
+                if (r_idx, c_idx) == pos:
+                    row_str += f'{Colors.RED}L{Colors.RESET}' # Link atual
+                elif (r_idx, c_idx) in path_set:
+                    row_str += f'{Colors.YELLOW}·{Colors.RESET}' # Caminho percorrido
+                else:
+                    row_str += char
+            print(row_str)
+
+        print("-" * 60)
+        print(f"Passo: {i+1}/{len(full_path)} | Posição: {pos} | Custo Acumulado: {current_path_cost}")
+        print(f"Custo Total da Rota Ótima: {total_cost}")
+        time.sleep(0.05) # Pequeno atraso para visualização
+
+    print("\nJornada no console concluída!")
+
 def main():
     print("Calculando todos os custos de viagem...")
     all_costs, all_paths = calculate_all_costs()
@@ -157,6 +217,15 @@ def main():
 
     print(f"\nA melhor rota encontrada é: start -> {' -> '.join(optimal_tour)} -> Lost Woods")
     print(f"Custo total estimado da jornada: {total_cost}")
+
+    # Montar o caminho completo para visualização no console
+    full_path_console = []
+    full_path_console.extend(all_paths[("start", optimal_tour[0])])
+    for i in range(len(optimal_tour) - 1):
+        full_path_console.extend(all_paths[(optimal_tour[i], optimal_tour[i+1])][1:])
+    full_path_console.extend(all_paths[(optimal_tour[-1], "end")][1:])
+
+    visualize_console_journey(full_path_console, total_cost)
 
     generate_journey_image(all_paths, optimal_tour, total_cost)
 

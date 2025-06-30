@@ -48,7 +48,7 @@ DUNGEON_3_MAP_PATH = '/home/israel/zelda_heuristic_search/maps/dungeon3_map.csv'
 
 HYRULE_MAP, hyrule_locations = parse_map_data(HYRULE_MAP_PATH)
 DUNGEON_1_MAP, dungeon_1_locations = parse_map_data(DUNGEON_1_MAP_PATH)
-DUNGEN_2_MAP, dungeon_2_locations = parse_map_data(DUNGEON_2_MAP_PATH)
+DUNGEON_2_MAP, dungeon_2_locations = parse_map_data(DUNGEON_2_MAP_PATH)
 DUNGEON_3_MAP, dungeon_3_locations = parse_map_data(DUNGEON_3_MAP_PATH)
 
 DUNGEON_MAPS = {
