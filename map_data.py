@@ -1,4 +1,5 @@
 import csv
+import os
 
 def parse_map_data(file_path):
     """
@@ -53,11 +54,16 @@ TERRAIN_COSTS = {
 }
 
 # --- Carregando Mapas e Localizações ---
-# Caminhos absolutos para os arquivos de mapa.
-HYRULE_MAP_PATH = '/home/israel/zelda_heuristic_search/maps/hyrule_map.csv'
-DUNGEON_1_MAP_PATH = '/home/israel/zelda_heuristic_search/maps/dungeon1_map.csv'
-DUNGEON_2_MAP_PATH = '/home/israel/zelda_heuristic_search/maps/dungeon2_map.csv'
-DUNGEON_3_MAP_PATH = '/home/israel/zelda_heuristic_search/maps/dungeon3_map.csv'
+# Constrói caminhos dinâmicos para os arquivos de mapa, garantindo que o script funcione em qualquer máquina.
+# Obtém o caminho absoluto para o diretório onde este script (map_data.py) está localizado.
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Junta o caminho do diretório do script com o nome da subpasta 'maps' e o nome do arquivo do mapa.
+# Isso cria um caminho completo e confiável para cada mapa, independentemente de onde o projeto está localizado.
+HYRULE_MAP_PATH = os.path.join(script_dir, 'maps', 'hyrule_map.csv')
+DUNGEON_1_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon1_map.csv')
+DUNGEON_2_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon2_map.csv')
+DUNGEON_3_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon3_map.csv')
 
 # Carrega os dados de cada mapa usando a função de parsing.
 HYRULE_MAP, hyrule_locations = parse_map_data(HYRULE_MAP_PATH)
@@ -69,7 +75,7 @@ DUNGEON_3_MAP, dungeon_3_locations = parse_map_data(DUNGEON_3_MAP_PATH)
 DUNGEON_MAPS = {
     "dungeon1": DUNGEON_1_MAP,
     "dungeon2": DUNGEON_2_MAP,
-    "dungeon3": DUNGE_3_MAP,
+    "dungeon3": DUNGEON_3_MAP,
 }
 
 # --- Pontos de Interesse (Coordenadas [linha, coluna]) ---
