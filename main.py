@@ -1,3 +1,23 @@
+"""
+ESTRATÉGIA GERAL DO PROGRAMA:
+
+O problema de encontrar a rota ótima para Link é resolvido em duas etapas principais:
+
+1.  **Cálculo de Distâncias (Pathfinding):**
+    Primeiro, usamos o algoritmo A* para pré-calcular o caminho e o custo de todas
+    os trechos da viagem. Isso inclui ir do início a cada masmorra, de uma masmorra
+    a outra, e da última masmorra ao final. Também calculamos o custo interno de
+    cada masmorra. Isso é feito na função `calculate_all_costs()`.
+
+2.  **Otimização da Rota (Problema do Caixeiro Viajante - TSP):**
+    Com todos os custos já conhecidos, testamos todas as ordens (permutações)
+    possíveis para visitar as 3 masmorras. Como são poucas masmorras (3! = 6 rotas),
+    podemos simplesmente calcular o custo total de cada uma e escolher a mais barata.
+    Isso é feito na função `find_optimal_tour()`.
+
+A visualização final apenas junta os caminhos individuais da rota ótima encontrada.
+"""
+
 import itertools
 import time
 import os

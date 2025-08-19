@@ -2,18 +2,18 @@ import heapq
 
 class Node:
     """
-    Representa um nó no grid de busca. Cada nó armazena sua posição,
-    o nó pai (para reconstruir o caminho), e os custos g, h, e f.
+    Representa um ponto (nó) no grid. Funciona como um "passo" no caminho.
+    Armazena sua posição e os custos necessários para o cálculo do A*.
     """
     def __init__(self, position, parent=None):
-        self.position = position  # A coordenada (linha, coluna) do nó no grid.
-        self.parent = parent      # O nó que precedeu este no caminho.
+        self.position = position  # Coordenada (linha, coluna) no mapa.
+        self.parent = parent      # O nó anterior no caminho, para reconstrução.
 
-        # g: Custo real do caminho desde o nó inicial até este nó.
+        # G: Custo real do início até este nó. É o custo já acumulado.
         self.g = 0
-        # h: Custo heurístico estimado deste nó até o nó final.
+        # H: Custo heurístico (estimado) deste nó até o final. É uma previsão inteligente.
         self.h = 0
-        # f: Custo total (g + h). É o valor usado para priorizar os nós na busca.
+        # F: Custo total (g + h). É a prioridade do nó. O A* sempre explora o nó com menor F.
         self.f = 0
 
     def __eq__(self, other):
@@ -21,12 +21,11 @@ class Node:
         return self.position == other.position
 
     def __lt__(self, other):
-        # Define a ordem dos nós na fila de prioridade (min-heap).
-        # Nós com menor custo 'f' têm maior prioridade.
+        # Define que nós com menor custo 'f' têm maior prioridade.
         return self.f < other.f
 
     def __hash__(self):
-        # Permite que o nó seja adicionado a um conjunto (set), usando sua posição como identificador único.
+        # Permite adicionar nós a um conjunto (set).
         return hash(self.position)
 
 def manhattan_distance(pos1, pos2):
@@ -48,42 +47,45 @@ def a_star_search(map_grid, terrain_costs, start_pos, end_pos):
     start_node = Node(start_pos)
     end_node = Node(end_pos)
 
-    # A 'lista aberta' armazena os nós a serem visitados.
-    # open_list_heap é uma fila de prioridade para obter rapidamente o nó com menor 'f'.
+    # O A* usa 2 listas principais para controlar a busca:
+    
+    # 1. LISTA ABERTA (open_list): Nós que foram descobertos, mas ainda não visitados.
+    # Usamos uma fila de prioridade (heap) para sempre pegar o nó com menor custo 'f' rapidamente.    
     open_list_heap = []
-    # open_list_dict permite verificar em O(1) se um nó já está na lista aberta e acessar seus dados.
+    
+    # Usamos um dicionário para acessar e verificar a existência de um nó na lista aberta em tempo O(1).
     open_list_dict = {}
 
-    # A 'lista fechada' armazena as posições dos nós que já foram completamente explorados.
+    # 2. LISTA FECHADA (closed_set): Nós que já foram completamente explorados.
+    # Evita que o algoritmo ande em círculos ou reavalie caminhos já consolidados.
     closed_set = set()
 
-    # Inicia a busca adicionando o nó inicial à lista aberta.
+    # O ponto de partida é o primeiro nó a ser explorado.
     heapq.heappush(open_list_heap, start_node)
     open_list_dict[start_node.position] = start_node
 
     # O loop principal do A* continua enquanto houver nós para explorar na lista aberta.
     while open_list_heap:
-        # Retira o nó com o menor custo 'f' da fila de prioridade.
+        # Pega o nó mais promissor (menor custo 'f') da lista aberta.
         current_node = heapq.heappop(open_list_heap)
         
-        # Otimização: se um nó foi adicionado à heap múltiplas vezes com custos diferentes,
-        # este 'del' garante que estamos processando a versão com o menor custo 'f' que chegou primeiro.
+        # Remove o nó do dicionário de controle.
         if current_node.position not in open_list_dict:
             continue
         del open_list_dict[current_node.position]
 
-        # Se o nó atual é o destino, o caminho foi encontrado.
+        # Se chegamos ao destino, a busca terminou com sucesso.
         if current_node.position == end_node.position:
             path = []
-            cost = current_node.g
+            cost = current_node.g # O custo final é o 'g' do nó de destino.
             temp = current_node
-            # Reconstrói o caminho a partir do nó final, seguindo os pais.
+            # Volta pelo caminho usando os 'pais' de cada nó para montar a rota.
             while temp is not None:
                 path.append(temp.position)
                 temp = temp.parent
             return path[::-1], cost # Retorna o caminho invertido (do início ao fim) e o custo total.
 
-        # Adiciona a posição do nó atual à lista fechada para não reprocessá-lo.
+        # Adiciona o nó atual à lista fechada, marcando-o como "já explorado".
         closed_set.add(current_node.position)
 
         # Explora os vizinhos do nó atual (movimentos em 4 direções).
@@ -91,38 +93,38 @@ def a_star_search(map_grid, terrain_costs, start_pos, end_pos):
         for move in [(0, 1), (0, -1), (1, 0), (-1, 0)]: # Direita, Esquerda, Baixo, Cima
             next_pos = (row + move[0], col + move[1])
 
-            # Verifica se o vizinho está dentro dos limites do mapa.
+            # --- Validações do Vizinho ---
+            # 1. Está dentro do mapa?
             if not (0 <= next_pos[0] < len(map_grid) and 0 <= next_pos[1] < len(map_grid[0])):
                 continue
             
-            # Verifica se o terreno do vizinho é intransponível.
+            # 2. É um obstáculo (terreno intransponível)?
             terrain_type = map_grid[next_pos[0]][next_pos[1]]
             if terrain_costs.get(terrain_type, float('inf')) == float('inf'):
                 continue
 
-            # Se o vizinho já está na lista fechada, ignora-o.
+            # 3. Já foi explorado (está na lista fechada)?
             if next_pos in closed_set:
                 continue
 
-            # Calcula os custos para o nó vizinho.
+            # --- Calcula os custos para o vizinho ---
             move_cost = terrain_costs[terrain_type]
             g_cost = current_node.g + move_cost
             h_cost = manhattan_distance(next_pos, end_node.position)
             f_cost = g_cost + h_cost
 
-            # Se o vizinho já está na lista aberta com um custo 'f' menor ou igual, não faz nada.
-            # Isso evita caminhos piores para nós já descobertos.
+            # Se já conhecemos um caminho melhor para este vizinho, ignoramos este caminho atual.
             if next_pos in open_list_dict and open_list_dict[next_pos].f <= f_cost:
                 continue
 
-            # Cria o nó vizinho e define seus custos e pai.
+            # Se este é um caminho melhor, criamos/atualizamos o nó vizinho.
             neighbor = Node(next_pos, current_node)
             neighbor.g = g_cost
             neighbor.h = h_cost
             neighbor.f = f_cost
             
-            # Adiciona o vizinho à lista aberta para exploração futura.
+            # Adiciona o vizinho à lista aberta para ser explorado no futuro.
             heapq.heappush(open_list_heap, neighbor)
             open_list_dict[neighbor.position] = neighbor
 
-    return None, 0  # Retorna None se nenhum caminho for encontrado.
+    return None, 0  # Se a lista aberta esvaziar, não há caminho possível.
