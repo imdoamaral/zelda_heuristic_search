@@ -2,26 +2,20 @@ import csv
 import os
 
 def parse_map_data(file_path):
-    """
-    Lê um arquivo de mapa no formato CSV e o converte em uma estrutura de dados para o jogo.
-    A função extrai o grid do mapa, onde cada célula tem um tipo de terreno, e também
-    mapeia a localização de pontos de interesse (como Link, entradas de masmorras, etc.).
-    """
-    grid = []
-    locations = {}
-    
+    """Lê um CSV, converte os caracteres em números (usando a legenda) e guarda as coordenadas dos pontos de interesse"""
+    grid = [] # matriz com o novo mapa
+    locations = {} # pontos de interesse
+
     with open(file_path, 'r') as f:
         reader = csv.reader(f)
-        for r, row in enumerate(reader):
+        for r, row in enumerate(reader): # faz um loop sobre cada linha do csv. r = indice e row = valores de cada linha do CSV
             grid_row = []
             for c, cell in enumerate(row):
-                cell_content = cell.strip()
-                # Converte o caractere do CSV para um ID numérico de terreno usando a legenda.
-                # Se o caractere não for encontrado, assume-se que é uma parede (6).
-                terrain_type = LEGEND.get(cell_content, 6)
+                cell_content = cell.strip() # converte cada caractere do CSV para um ID numerico de terreno usando a legenda
+                terrain_type = LEGEND.get(cell_content, 6) # se o caractere nao for encontrado, assume-se que é uma parede (6)
                 grid_row.append(terrain_type)
-                
-                # Se a célula representa um ponto de interesse, armazena suas coordenadas.
+
+                # Se a celula representa um ponto de interesse, armazena suas coordenadas
                 if cell_content in ['L', 'MS', 'E', 'P', 'MA', 'LW']:
                     key = cell_content
                     if key not in locations:
@@ -29,95 +23,101 @@ def parse_map_data(file_path):
                     locations[key].append((r, c))
 
             grid.append(grid_row)
-            
+
     return grid, locations
 
 # --- Legenda de Terrenos e Custos ---
-# Mapeia os caracteres do arquivo CSV para um ID numérico de terreno.
+# Mapeia os caracteres do arquivos CSV para um ID numerico de terreno
 LEGEND = {
-    'G': 0, 'S': 1, 'F': 2, 'M': 3, 'A': 4,  # Terrenos de Hyrule
-    '': 5, 'X': 6,                           # Terrenos de Masmorra (chão e parede)
-    'L': 0, 'MS': 0, 'MA': 0, 'LW': 2,        # Pontos de interesse sobrepõem terrenos (ex: Link está na grama)
-    'E': 5, 'P': 5                           # Pontos de interesse em masmorras (ex: Entrada está no chão)
+    'G':0, 'S':1, 'F':2, 'M':3, 'A':4,  # terrenos de hyrule
+    '':5, 'X':6,                        # terrenos de masmorra (chao e parede)
+    'L':0, 'MS':0, 'MA':0, 'LW':2,      # pontos de interesse (sobrepoem terrenos)
+    'E':5, 'P':5                        # pontos de interesse em masmorras (entrada, portal)
 }
 
-# Define o custo de movimento para cada tipo de terreno.
-# Terrenos com custo 'inf' (infinito) são intransponíveis.
+# Define o custo de movimento para cada tipo de terreno
+# Terrenos com custo 'inf' (infinito) sao instransponiveis
 TERRAIN_COSTS = {
     0: 10,  # Grama
     1: 20,  # Areia
     2: 100, # Floresta
     3: 150, # Montanha
     4: 180, # Água
-    5: 10,  # Chão da Masmorra
+    5: 10,  # Chao da masmorra
     6: float('inf') # Parede
 }
 
-# --- Carregando Mapas e Localizações ---
-# Constrói caminhos dinâmicos para os arquivos de mapa, garantindo que o script funcione em qualquer máquina.
-# Obtém o caminho absoluto para o diretório onde este script (map_data.py) está localizado.
+# --- Carrega Mapas e Localizaçoes ---
+# Obtem o caminho absoluto para o diretorio onde este script (map_Data.py) esta localizado
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Junta o caminho do diretório do script com o nome da subpasta 'maps' e o nome do arquivo do mapa.
-# Isso cria um caminho completo e confiável para cada mapa, independentemente de onde o projeto está localizado.
+# Junta o caminho do diretorio do script com o nome da subpasta 'maps' e o nome do arquivo do mapa
 HYRULE_MAP_PATH = os.path.join(script_dir, 'maps', 'hyrule_map.csv')
 DUNGEON_1_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon1_map.csv')
 DUNGEON_2_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon2_map.csv')
 DUNGEON_3_MAP_PATH = os.path.join(script_dir, 'maps', 'dungeon3_map.csv')
 
-# Carrega os dados de cada mapa usando a função de parsing.
+# Carrega os dados de cada mapa usando a funçao de parsing (transformar)
 HYRULE_MAP, hyrule_locations = parse_map_data(HYRULE_MAP_PATH)
 DUNGEON_1_MAP, dungeon_1_locations = parse_map_data(DUNGEON_1_MAP_PATH)
 DUNGEON_2_MAP, dungeon_2_locations = parse_map_data(DUNGEON_2_MAP_PATH)
 DUNGEON_3_MAP, dungeon_3_locations = parse_map_data(DUNGEON_3_MAP_PATH)
 
-# Agrupa os mapas das masmorras em um dicionário para fácil acesso.
+# Agrupa os mapas das masmorras em um dicionario para facil acesso
 DUNGEON_MAPS = {
     "dungeon1": DUNGEON_1_MAP,
     "dungeon2": DUNGEON_2_MAP,
     "dungeon3": DUNGEON_3_MAP,
 }
 
-# --- Pontos de Interesse (Coordenadas [linha, coluna]) ---
-# Posição inicial de Link no mapa de Hyrule.
-START_POS = hyrule_locations.get('L', [(-1, -1)])[0]
-# Posição da entrada para Lost Woods, o objetivo final.
-LOST_WOODS_POS = hyrule_locations.get('LW', [(-1,-1)])[0]
+# --- Pontos de interesse (Coordenadas [linha, coluna]) ---
+# O valor (-1, -1) é usado como valor padrao pra indicar que a coordenada nao foi encontrada no mapa
 
-# DUNGEON_ENTRANCES: Mapeia o nome de cada masmorra à sua coordenada de entrada no mapa de Hyrule.
-# Estas são as localizações marcadas como 'MA' no mapa principal.
+# Posiçao inicial de Link no mapa de Hyrule
+START_POS = hyrule_locations.get('L', [(-1, -1)])[0]
+
+# Posicao da entrada para Lost Woods, o objetivo final
+LOST_WOODS_POS = hyrule_locations.get('LW', [(-1, -1)])[0]
+
+# DUNGEON_ENTRANCES: Mapeia o nome de cada masmorra a a sua coordenada de entrada no mapa de hyrule
 dungeon_entrances_coords = sorted(hyrule_locations.get('MA', []))
 DUNGEON_ENTRANCES = {f"dungeon{i+1}": pos for i, pos in enumerate(dungeon_entrances_coords)}
 
-# DUNGEON_PORTALS: Mapeia o nome de cada masmorra à sua coordenada de "portal" *dentro* do mapa da masmorra.
-# Este é o ponto onde Link aparece ao entrar (marcado como 'E').
+"""
+DUNGEON_ENTRANCES = {
+    "dungeon1": (2, 5),
+    "dungeon2": (7, 3),
+    "dungeon3": (10, 8)
+}
+"""
+
+# DUNGEON_PORTALS: Mapeia o noem de cada masmorra a a sua coordenada de portal *dentro* do mapa da masmorra
+# Este e o ponto onde Link aparece ao entrar (marcado como 'E')
 DUNGEON_PORTALS = {
     "dungeon1": dungeon_1_locations.get('E', [(-1,-1)])[0],
     "dungeon2": dungeon_2_locations.get('E', [(-1,-1)])[0],
     "dungeon3": dungeon_3_locations.get('E', [(-1,-1)])[0],
 }
 
-# PENDANT_LOCATIONS: Mapeia o nome de cada masmorra à localização do seu respectivo pingente (marcado como 'P').
+# PENDANT_LOCATIONS: Mapeia o nome de cada masmorra a a localizaçao do seu respectivo pingente (marcado como 'P')
 PENDANT_LOCATIONS = {
     "dungeon1": dungeon_1_locations.get('P', [(-1,-1)])[0],
     "dungeon2": dungeon_2_locations.get('P', [(-1,-1)])[0],
     "dungeon3": dungeon_3_locations.get('P', [(-1,-1)])[0],
 }
 
-
-if __name__ == '__main__':
-    # Este bloco é executado apenas quando o script é rodado diretamente.
-    # Útil para depuração e verificação rápida dos dados carregados.
-    print("Hyrule Map Grid:")
+if __name__ == '__main__': # verifica se o script esta sendo rodado diretamente
+    # se o modulo acima estiver sendo importado de outro script, nao executa esse main.
+    print("Hyrule Map Grid: ")
     for row in HYRULE_MAP:
         print(row)
-    print("\nHyrule Locations:", hyrule_locations)
-    print("\nDungeon 1 Map Grid:")
+    print("\nHyrule Locations: ", hyrule_locations)
+    print("\nDungeon 1 Map Grid: ")
     for row in DUNGEON_1_MAP:
         print(row)
-    print("\nDungeon 1 Locations:", dungeon_1_locations)
-    print("\nStart Position:", START_POS)
-    print("Dungeon Entrances:", DUNGEON_ENTRANCES)
+    print("\nDungeon 1 Locations: ", dungeon_1_locations)
+    print("\nStart Position: ", START_POS)
+    print("Dungeon Entrances: ", DUNGEON_ENTRANCES)
     print("Dungeon Portals:", DUNGEON_PORTALS)
-    print("Pendant Locations:", PENDANT_LOCATIONS)
-    print("Lost Woods Position:", LOST_WOODS_POS)
+    print("Pendant Locations: ", PENDANT_LOCATIONS)
+    print("Lost Woods Position: ", LOST_WOODS_POS)
